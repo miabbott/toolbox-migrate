@@ -17,7 +17,7 @@ $ ./toolbox-migrate.py backup
 Then create a fresh, new `toolbox` container and from within that container:
 
 ```bash
-$ ./toolbox-migrate.by restore
+$ ./toolbox-migrate.py restore
 ```
 
 For all the bells and whistles, `toolbox-migrate.py --help` will tell you more.
