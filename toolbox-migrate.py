@@ -67,6 +67,12 @@ class _Base:
             raise SystemExit(1)
         return command
 
+    def copy_file(self, src_parts, dst_parts, description):
+        src = os.path.join(*src_parts)
+        dst = os.path.join(*dst_parts)
+        logging.debug(f"Copying {description}: {src}->{dst}")
+        shutil.copy(src, dst)
+
 
 class Backup(_Base):
 
@@ -90,12 +96,11 @@ class Backup(_Base):
             self.check_dir_exists(yum_repo_backup_dir, "yum repo", True)
 
             for repo in yum_repos_dir:
-                fedora_match = fedora_re.match(repo)
-                if not fedora_match:
-                    src = os.path.join(YUM_REPOS_DIR, repo)
-                    dst = os.path.join(yum_repo_backup_dir, repo)
-                    logging.debug(f"Backing up yum repo file {repo}")
-                    shutil.copy(src, dst)
+                if not fedora_re.match(repo):
+                    self.copy_file(
+                        [YUM_REPOS_DIR, repo],
+                        [yum_repo_backup_dir, repo],
+                        "yum repo file")
 
         if backup_all or rpms:
             rpm_backup = os.path.join(backup_dir_path, "toolbox-rpms.backup")
@@ -113,10 +118,10 @@ class Backup(_Base):
             self.check_dir_exists(cert_backup_dir, "CA cert", True)
 
             for cert in cert_list:
-                src = os.path.join(CA_CERT_DIR, cert)
-                dst = os.path.join(cert_backup_dir, cert)
-                logging.debug(f"Backing up CA cert {cert}")
-                shutil.copy(src, dst)
+                self.copy_file(
+                    [CA_CERT_DIR, cert],
+                    [cert_backup_dir, cert],
+                    "CA cert")
 
         logging.debug("Backup of toolbox config complete")
 
@@ -142,13 +147,13 @@ class Restore(_Base):
             self.check_dir_exists(cert_backup_dir, "CA cert", False)
 
             backup_certs = self.ls(cert_backup_dir, "CA cert")
-            if backup_certs:
-                for cert in backup_certs:
-                    src = os.path.join(cert_backup_dir, cert)
-                    dst = os.path.join(CA_CERT_DIR, cert)
-                    logging.debug(f"Restoring CA cert named {cert}")
-                    shutil.copy(src, dst)
+            for cert in backup_certs:
+                self.copy_file(
+                    [cert_backup_dir, cert],
+                    [CA_CERT_DIR, cert],
+                    "CA cert")
 
+            if backup_certs:
                 self.run_command(
                     ['update-ca-trust'], "update the CA trust")
 
@@ -157,12 +162,11 @@ class Restore(_Base):
             self.check_dir_exists(yum_repo_backup_dir, "repo", False)
 
             backup_repos = self.ls(yum_repo_backup_dir, 'yum repo')
-            if backup_repos:
-                for repo in backup_repos:
-                    src = os.path.join(yum_repo_backup_dir, repo)
-                    dst = os.path.join(YUM_REPOS_DIR, repo)
-                    logging.debug(f"Restoring repo file {repo}")
-                    shutil.copy(src, dst)
+            for repo in backup_repos:
+                self.copy_file(
+                    [yum_repo_backup_dir, repo],
+                    [YUM_REPOS_DIR, repo],
+                    "repo file")
 
         if restore_all or rpms:
             rpms_backup_file = os.path.join(
@@ -198,13 +202,13 @@ class Restore(_Base):
             self.check_dir_exists(cert_backup_dir, "CA cert", False)
 
             backup_certs = self.ls(cert_backup_dir, "CA cert")
-            if backup_certs:
-                for cert in backup_certs:
-                    src = os.path.join(cert_backup_dir, cert)
-                    dst = os.path.join(CA_CERT_DIR, cert)
-                    logging.debug(f"Restoring CA cert named {cert}")
-                    shutil.copy(src, dst)
+            for cert in backup_certs:
+                self.copy_file(
+                    [cert_backup_dir, cert],
+                    [CA_CERT_DIR, cert],
+                    "CA cert")
 
+            if backup_certs:
                 self.run_command(
                     ['update-ca-trust'], 'update the CA trust')
 
