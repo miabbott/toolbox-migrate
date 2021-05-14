@@ -173,12 +173,9 @@ class Restore(_Base):
                 backup_dir_path, "toolbox-rpms.backup")
             self.check_file_exists(rpms_backup_file)
 
-            with open(rpms_backup_file, 'r') as f:
-                rpms = f.read()
-
             dnf_install = ['dnf', '-y', '--skip-broken', 'install']
-            for r in rpms.split():
-                dnf_install.append(r)
+            with open(rpms_backup_file, 'r') as f:
+                dnf_install = dnf_install + f.read().split()
 
             logging.debug("Starting restore of RPMs")
             install_cp = self.run_command(
